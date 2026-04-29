@@ -6,6 +6,7 @@ import pypistats
 from addict import Dict
 from httpx import HTTPStatusError
 from requests.exceptions import HTTPError
+from urllib3.exceptions import HTTPError as Urllib3HTTPError
 
 from best_of import utils
 from best_of.integrations import libio_integration
@@ -104,9 +105,10 @@ class PypiIntegration(BaseIntegration):
                 project_info.monthly_downloads += int(
                     project_info.pypi_monthly_downloads
                 )
+                time.sleep(2)  # respect pypistats 30 req/min limit
                 return
-            except (HTTPError, HTTPStatusError) as ex:
-                if ex.response.status_code == 429:
+            except (HTTPError, HTTPStatusError, Urllib3HTTPError) as ex:
+                if getattr(getattr(ex, 'response', None), 'status_code', None) == 429 or '429' in str(ex):
                     sleep_time = 2 * i
                     log.info(
                         f"Too many requests to pypistats (429). Sleep for {sleep_time} seconds and try again."
