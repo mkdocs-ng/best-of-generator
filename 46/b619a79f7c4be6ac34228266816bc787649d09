@@ -1,0 +1,27 @@
+.github/dependabot.yml
+  s_f518a1c9328c7b::t_fceba9908f0d44 1-10
+.github/workflows/build-pipeline.yml
+  s_f518a1c9328c7b::t_225607d6144297 35
+.github/workflows/close-stale-issues.yml
+  s_f518a1c9328c7b::t_556136cecbd1e9 12
+.github/workflows/pr-labeler.yml
+  s_f518a1c9328c7b::t_7601ba12c5557e 16
+.github/workflows/release-pipeline.yml
+  s_f518a1c9328c7b::t_a41355f0220496 46,52,54,92,120
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "46b619a79f7c4be6ac34228266816bc787649d09",
+  "prompts": {},
+  "sessions": {
+    "s_f518a1c9328c7b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c2b090ca-b947-4998-975f-5d845a56ad69",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Xianpeng Shen <xianpeng.shen@gmail.com>"
+    }
+  }
+}
