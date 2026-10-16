@@ -108,7 +108,11 @@ class PypiIntegration(BaseIntegration):
                 time.sleep(2)  # respect pypistats 30 req/min limit
                 return
             except (HTTPError, HTTPStatusError, Urllib3HTTPError) as ex:
-                if getattr(getattr(ex, 'response', None), 'status_code', None) == 429 or '429' in str(ex):
+                # urllib3's HTTPError carries no response; read the status defensively
+                status_code = getattr(
+                    getattr(ex, "response", None), "status_code", None
+                )
+                if status_code == 429 or "429" in str(ex):
                     sleep_time = 2 * i
                     log.info(
                         f"Too many requests to pypistats (429). Sleep for {sleep_time} seconds and try again."
@@ -118,7 +122,7 @@ class PypiIntegration(BaseIntegration):
                     continue
                 else:
                     log.info(
-                        f"Unable to request statistics from pypi: {project_info.pypi_id} ({ex.response.status_code})"
+                        f"Unable to request statistics from pypi: {project_info.pypi_id} ({status_code})"
                     )
                     return
             except Exception as ex:

@@ -563,8 +563,7 @@ def generate_github_details(project: Dict, configuration: Dict) -> str:
     # only show : if details are available
     separator = (
         ""
-        if not configuration.generate_badges
-        and not configuration.generate_clone_hints
+        if not configuration.generate_badges and not configuration.generate_clone_hints
         else ":"
     )
 

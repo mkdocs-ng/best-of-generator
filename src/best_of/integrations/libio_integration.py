@@ -200,9 +200,9 @@ def update_package_via_libio(
         project_info.dependent_project_count += dependent_project_count
 
         # Add for project manager
-        project_info[
-            package_manager + "_dependent_project_count"
-        ] = dependent_project_count
+        project_info[package_manager + "_dependent_project_count"] = (
+            dependent_project_count
+        )
 
     if (
         not project_info.description
