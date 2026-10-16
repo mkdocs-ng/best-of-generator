@@ -1,0 +1,29 @@
+setup.cfg
+  s_f518a1c9328c7b::t_2747f4f13170ac 9-14
+src/best_of/generators/markdown_list.py
+  s_f518a1c9328c7b::t_b35dac0921a4ba 227-229
+src/best_of/integrations/github_integration.py
+  s_f518a1c9328c7b::t_01a5aedcc13b45 566
+src/best_of/integrations/libio_integration.py
+  s_f518a1c9328c7b::t_a18509833b5918 203-205
+src/best_of/integrations/mkdocs_integration.py
+  s_f518a1c9328c7b::t_dd47cfeccf6bbb 1-2,6,13-19,22,30-33,42
+src/best_of/integrations/pypi_integration.py
+  s_f518a1c9328c7b::t_c7fcb6d27e0987 111-115,125
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "22dbadbdc5a8dd84813857d33e493b9745c11ec1",
+  "prompts": {},
+  "sessions": {
+    "s_f518a1c9328c7b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c2b090ca-b947-4998-975f-5d845a56ad69",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Xianpeng Shen <xianpeng.shen@gmail.com>"
+    }
+  }
+}
