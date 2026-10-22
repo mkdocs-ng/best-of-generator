@@ -1,20 +1,26 @@
+# Config for actions/labeler v5+ (https://github.com/actions/labeler#match-object)
+
 # Add documentation label to any change in documentation related files
 documentation:
-  - "docs/*"
-  - "docs/**/*"
-  - "README.md"
-  - "**/README.md"
-  - "CONTRIBUTING.md"
+  - changed-files:
+      - any-glob-to-any-file:
+          - "docs/*"
+          - "docs/**/*"
+          - "README.md"
+          - "**/README.md"
+          - "CONTRIBUTING.md"
 
 maintenance:
-  - ".vscode/*"
-  - ".vscode/**/*"
-  - ".github/*"
-  - ".github/**/*"
-  - ".reuse/*"
-  - "LICENSES/*"
-  - ".editorconfig"
-  - ".gitignore"
-  - "**/.gitignore"
-  - "build.py"
-  - "**/build.py"
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".vscode/*"
+          - ".vscode/**/*"
+          - ".github/*"
+          - ".github/**/*"
+          - ".reuse/*"
+          - "LICENSES/*"
+          - ".editorconfig"
+          - ".gitignore"
+          - "**/.gitignore"
+          - "build.py"
+          - "**/build.py"
