@@ -1,0 +1,21 @@
+.github/pr-labeler-file-path.yml
+  s_6c4633f06a07f2::t_4ef6ad8f146afc 1-2,5-11,14-26
+.github/workflows/pr-labeler.yml
+  s_6c4633f06a07f2::t_565f6cbc28d878 6-9,20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9548101589b7d1fc27b7553ee9227d4b09ba55c8",
+  "prompts": {},
+  "sessions": {
+    "s_6c4633f06a07f2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e9bf18b4-32fb-4c25-bd1e-707215256f7b",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Xianpeng Shen <xianpeng.shen@gmail.com>"
+    }
+  }
+}
