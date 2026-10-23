@@ -224,7 +224,9 @@ def generate_project_body(project: Dict, configuration: Dict, labels: list) -> s
         body_md = "\n\n" + body_md
         return body_md
 
-    mkdocs_prefix, mkdocs_body = mkdocs_integration.MkDocsIntegration.generate_md_details(project, configuration)
+    mkdocs_prefix, mkdocs_body = (
+        mkdocs_integration.MkDocsIntegration.generate_md_details(project, configuration)
+    )
     body_md += mkdocs_prefix
 
     if project.github_id:
@@ -273,10 +275,6 @@ def generate_project_md(
 
     # Dynamically calculate the max length of the description.
     # The goal is that it fits into one row in most cases.
-    label_count = 0
-    if project.labels:
-        label_count = len(project.labels)
-
     description = utils.process_description(
         project.description,
         configuration.max_description_length,
