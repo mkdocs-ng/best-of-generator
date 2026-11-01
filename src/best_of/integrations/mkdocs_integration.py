@@ -2,6 +2,11 @@ from typing import List, Sequence, Tuple
 
 from addict import Dict
 
+DEFAULT_MKDOCS_CONFIG_URL = (
+    "https://mkdocs-ng.github.io/mkdocs/user-guide/configuration/"
+)
+GALLERY_URL = "https://pawamoy.github.io/mkdocs-gallery"
+
 
 def _get_as_list(mapping: Dict, key: str) -> Sequence[str]:
     names = mapping.get(key, ())
@@ -15,6 +20,29 @@ def _strip_prefix(value: str, prefix: str) -> str:
     if prefix and value.startswith(prefix):
         return value[len(prefix) :]
     return value
+
+
+def _screenshot_md(project: Dict, themes: Sequence[str]) -> str:
+    """Return the screenshot shown next to a theme.
+
+    A project can set `screenshot` to an image URL, or to `false` to show none.
+    Otherwise themes use their picture from the MkDocs gallery.
+    """
+    screenshot = project.get("screenshot")
+    if screenshot is False:
+        return ""
+    if screenshot:
+        link = project.homepage or project.github_url or screenshot
+    elif themes:
+        link = f"{GALLERY_URL}/themes/{themes[0]}/"
+        screenshot = f"{GALLERY_URL}/assets/img/{themes[0]}.png"
+    else:
+        return ""
+    return (
+        f'<a href="{link}">\n'
+        f'<img src="{screenshot}" width="400" align="right">\n'
+        f"</a>\n\n"
+    )
 
 
 class MkDocsIntegration:
@@ -33,7 +61,10 @@ class MkDocsIntegration:
         yml = yml_main
         if themes:
             config_keys.append("theme")
-            yml += [f"theme: {x}" for x in themes]
+            # One `theme:` line keeps the snippet valid YAML.
+            yml.append(f"theme: {themes[0]}")
+            if len(themes) > 1:
+                yml.append("# or: " + ", ".join(themes[1:]))
             yml = yml_extra
         if plugins:
             config_keys.append("plugins")
@@ -47,16 +78,10 @@ class MkDocsIntegration:
 
         if not config_keys:
             return "", ""
-        url = f"https://www.mkdocs.org/user-guide/configuration/#{config_keys[0]}"
+        config_url = configuration.mkdocs_config_url or DEFAULT_MKDOCS_CONFIG_URL
+        url = f"{config_url}#{config_keys[0]}"
 
-        if themes:
-            prefix = (
-                f'<a href="https://pawamoy.github.io/mkdocs-gallery/themes/{themes[0]}/">\n'
-                f'<img src="https://pawamoy.github.io/mkdocs-gallery/assets/img/{themes[0]}.png" width="400" align="right">\n'
-                f"</a>\n\n"
-            )
-        else:
-            prefix = ""
+        prefix = _screenshot_md(project, themes)
 
         lines = [
             f"Add to [mkdocs.yml]({url}):",

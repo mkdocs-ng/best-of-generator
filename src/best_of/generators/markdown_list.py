@@ -445,11 +445,12 @@ def generate_legend(configuration: Dict, labels: list, heading_level: int = 2) -
         + str(configuration.project_inactive_months)
         + " months no activity)_\n"
     )
-    legend_md += (
-        "- 💀&nbsp; Dead project _("
-        + str(configuration.project_dead_months)
-        + " months no activity)_\n"
-    )
+    if configuration.project_dead_months:
+        legend_md += (
+            "- 💀&nbsp; Dead project _("
+            + str(configuration.project_dead_months)
+            + " months no activity)_\n"
+        )
     legend_md += "- 📈📉&nbsp; Project is trending up or down\n"
     legend_md += "- ➕&nbsp; Project was recently added\n"
     if not configuration.hide_project_license and not configuration.hide_license_risk:
