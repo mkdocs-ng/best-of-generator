@@ -192,7 +192,8 @@ query($owner: String!, $repo: String!, $since_recent_activity: GitTimestamp!) {
     variables = {
         "owner": owner,
         "repo": repo,
-        "since_recent_activity": recent_activity_date.isoformat(),
+        # GitTimestamp wants an explicit offset; a naive timestamp is ambiguous.
+        "since_recent_activity": recent_activity_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
 
     try:
@@ -200,30 +201,188 @@ query($owner: String!, $repo: String!, $since_recent_activity: GitTimestamp!) {
             "https://api.github.com/graphql",
             json={"query": query, "variables": variables},
             headers=headers,
+            timeout=60,
         )
-
-        if response.status_code != 200:
-            log.info(
-                "Unable to find GitHub repo via GitHub api: "
-                + github_id
-                + " ("
-                + str(response.status_code)
-                + ")"
-            )
-            return None
-        response_data = response.json()
-
-        if "data" not in response_data:
-            log.info("Request returned unexpected data: " + str(response_data))
-            return None
-
-        return Dict(response_data["data"]["repository"])
     except Exception as ex:
         log.info(
             "Failed to request GitHub repo via GitHub api: " + github_id,
             exc_info=ex,
         )
         return None
+
+    if response.status_code != 200:
+        log.info(
+            f"Unable to find GitHub repo via GitHub api: {github_id} "
+            f"({response.status_code}): {response.text[:300]}"
+        )
+        if _is_rate_limited(response):
+            raise GitHubRateLimitError(_retry_after(response))
+        return None
+
+    try:
+        response_data = response.json()
+    except ValueError:
+        log.info(f"GitHub api returned invalid JSON for {github_id}")
+        return None
+
+    errors = response_data.get("errors")
+    if errors:
+        log.info(f"GitHub api returned errors for {github_id}: {str(errors)[:500]}")
+        if any(
+            isinstance(error, dict) and error.get("type") == "RATE_LIMITED"
+            for error in errors
+        ):
+            raise GitHubRateLimitError(_retry_after(response))
+
+    repository = (response_data.get("data") or {}).get("repository")
+    if not repository:
+        # A null repository means the query failed for this repo (see errors).
+        # Returning an empty Dict here would silently drop all GitHub metadata.
+        log.info(f"GitHub api returned no repository data for {github_id}")
+        return None
+
+    return Dict(repository)
+
+
+class GitHubRateLimitError(Exception):
+    def __init__(self, retry_after: int):
+        super().__init__(f"GitHub API rate limit hit, retry after {retry_after}s")
+        self.retry_after = retry_after
+
+
+def _is_rate_limited(response: requests.Response) -> bool:
+    if response.status_code == 429:
+        return True
+    if response.status_code == 403:
+        if response.headers.get("x-ratelimit-remaining") == "0":
+            return True
+        if "rate limit" in response.text.lower():
+            return True
+    return False
+
+
+def _retry_after(response: requests.Response) -> int:
+    try:
+        if response.headers.get("retry-after"):
+            return int(response.headers["retry-after"])
+        if response.headers.get("x-ratelimit-reset"):
+            return max(0, int(response.headers["x-ratelimit-reset"]) - int(time.time()))
+    except ValueError:
+        pass
+    return 60
+
+
+def _rest_count(url: str, headers: dict) -> Optional[int]:
+    """Count items behind a paginated REST endpoint with a single request."""
+    response = requests.get(url, headers=headers, timeout=60)
+    if response.status_code != 200:
+        return None
+    last = re.search(r'[?&]page=(\d+)>; rel="last"', response.headers.get("Link", ""))
+    if last:
+        return int(last.group(1))
+    return len(response.json())
+
+
+def request_metadata_from_github_rest(
+    github_api_token: str, github_id: str, recent_activity_date: datetime
+) -> Optional[Dict]:
+    """Fallback for when the GraphQL query fails.
+
+    Returns the same shape as request_metadata_from_github_api, but without the
+    counts that need extra requests (pull requests, closed issues).
+    """
+    headers = {
+        "Authorization": "token " + github_api_token,
+        "Accept": "application/vnd.github+json",
+    }
+    base = "https://api.github.com/repos/" + github_id
+    try:
+        response = requests.get(base, headers=headers, timeout=60)
+        if response.status_code != 200:
+            log.info(
+                f"Unable to find GitHub repo via GitHub REST api: {github_id} "
+                f"({response.status_code}): {response.text[:300]}"
+            )
+            if _is_rate_limited(response):
+                raise GitHubRateLimitError(_retry_after(response))
+            return None
+        repo = response.json()
+
+        info = Dict()
+        info.name = repo.get("name")
+        info.nameWithOwner = repo.get("full_name")
+        info.description = repo.get("description")
+        info.url = repo.get("html_url")
+        info.homepageUrl = repo.get("homepage")
+        info.createdAt = repo.get("created_at")
+        info.updatedAt = repo.get("updated_at")
+        info.pushedAt = repo.get("pushed_at")
+        if repo.get("license"):
+            info.licenseInfo.spdxId = repo["license"].get("spdx_id")
+        info.stargazers.totalCount = repo.get("stargazers_count")
+        info.forks.totalCount = repo.get("forks_count")
+        info.watchers.totalCount = repo.get("subscribers_count")
+
+        branch = repo.get("default_branch")
+        if branch:
+            commits = f"{base}/commits?sha={branch}&per_page=1"
+            info.masterCommit.target.history.totalCount = _rest_count(commits, headers)
+            since = recent_activity_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+            info.masterCommit.target.recent_activity.totalCount = _rest_count(
+                f"{commits}&since={since}", headers
+            )
+
+        response = requests.get(
+            base + "/releases?per_page=100", headers=headers, timeout=60
+        )
+        if response.status_code == 200:
+            info.releases.nodes = [
+                Dict(
+                    createdAt=release.get("created_at"),
+                    publishedAt=release.get("published_at"),
+                    tagName=release.get("tag_name"),
+                    isDraft=release.get("draft"),
+                    isPrerelease=release.get("prerelease"),
+                    releaseAssets=Dict(
+                        nodes=[
+                            Dict(downloadCount=asset.get("download_count"))
+                            for asset in release.get("assets") or []
+                        ]
+                    ),
+                )
+                for release in response.json()
+            ]
+        return info
+    except GitHubRateLimitError:
+        raise
+    except Exception as ex:
+        log.info(
+            "Failed to request GitHub repo via GitHub REST api: " + github_id,
+            exc_info=ex,
+        )
+        return None
+
+
+def _request_github_metadata(
+    github_api_token: str, github_id: str, recent_activity_date: datetime
+) -> Optional[Dict]:
+    for attempt in range(3):
+        try:
+            github_info = request_metadata_from_github_api(
+                github_api_token, github_id, recent_activity_date
+            )
+            if github_info is None:
+                log.info(f"Falling back to the GitHub REST api for {github_id}")
+                github_info = request_metadata_from_github_rest(
+                    github_api_token, github_id, recent_activity_date
+                )
+            return github_info
+        except GitHubRateLimitError as ex:
+            # The hourly limit can take up to an hour to reset.
+            wait = min(max(ex.retry_after, 5), 60 * 60)
+            log.warning(f"{ex}; waiting {wait}s (attempt {attempt + 1}/3)")
+            time.sleep(wait)
+    return None
 
 
 def update_via_github_api(project_info: Dict) -> None:
@@ -243,17 +402,11 @@ def update_via_github_api(project_info: Dict) -> None:
         days=default_config.RECENT_ACTIVITY_DAYS
     )
 
-    github_info = request_metadata_from_github_api(
+    github_info = _request_github_metadata(
         github_api_token, project_info.github_id, recent_activity_date
     )
     if github_info is None:
-        log.info("Retrying failed github api call short wait time.")
-        time.sleep(150)
-        github_info = request_metadata_from_github_api(
-            github_api_token, project_info.github_id, recent_activity_date
-        )
-
-    if github_info is None:
+        log.warning("No GitHub metadata for " + project_info.github_id)
         return
 
     if not project_info.github_url and github_info.url:
