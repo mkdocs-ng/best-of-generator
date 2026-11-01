@@ -206,6 +206,10 @@ Every project can also be expanded to show additional project information (by cl
         <td>Documentation URL of the project. Only use this property if the project documentation site is different from the GitHub URL.</td>
     </tr>
     <tr>
+        <td><code>screenshot</code></td>
+        <td>Image shown next to an MkDocs theme. By default, themes (<code>mkdocs_theme</code>) use their picture from the <a href="https://pawamoy.github.io/mkdocs-gallery/">MkDocs gallery</a>. Set an image URL to use another picture, or <code>false</code> to show none.</td>
+    </tr>
+    <tr>
         <td><code>resource</code></td>
         <td>If <code>True</code>, the project will be marked as a resource. Resources are not ranked and will always be shown on top of the category. You can use this to link to another best-of list section or website that contains additional projects.</td>
     </tr>
@@ -458,7 +462,7 @@ The configuration example above changes the default configuration to show all pr
     </tr>
     <tr>
         <td><code>project_dead_months</code></td>
-        <td>Number of months without activity until a project is marked as dead.</td>
+        <td>Number of months without activity until a project is marked as dead. Set to <code>0</code> to never mark projects as dead.</td>
         <td><code>12</code></td>
     </tr>
     <tr>
@@ -515,6 +519,11 @@ The configuration example above changes the default configuration to show all pr
         <td><code>generate_install_hints</code></td>
         <td>If <code>False</code>, the install hint code block for the package managers will not be shown.</td>
         <td><code>True</code></td>
+    </tr>
+    <tr>
+        <td><code>mkdocs_config_url</code></td>
+        <td>Configuration reference that the "Add to mkdocs.yml" hints link to. The <code>#theme</code>, <code>#plugins</code> or <code>#markdown_extensions</code> anchor is appended.</td>
+        <td><code>https://mkdocs-ng.github.io/mkdocs/user-guide/configuration/</code></td>
     </tr>
     <tr>
         <td><code>generate_toc</code></td>
