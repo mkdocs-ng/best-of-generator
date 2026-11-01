@@ -1,42 +1,42 @@
-# Based on https://github.com/ml-tooling/universal-build/blob/v0.6.18/workflows/build-pipeline.yml
 name: build-pipeline
 
 on:
   workflow_dispatch:
-    inputs:
-      build_args:
-        description: "Arguments passed to build script"
-        required: false
-      working_directory:
-        description: "Working directory from where the build command is run"
-        required: false
   push:
   pull_request:
 
-env:
-  BUILD_ARGS: ${{ secrets.BUILD_ARGS }}
-  WORKING_DIRECTORY: ${{ secrets.WORKING_DIRECTORY }}
-
+# Runs the same checks as `build.py --make --check --test` directly on the
+# runner. The old mltooling/build-environment container ships a Docker CLI that
+# can no longer talk to the runner's Docker daemon, so it failed before running
+# anything.
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: set-input-build-args
-        if: ${{ github.event.inputs != null  &&  github.event.inputs.build_args != null}}
-        run: echo "BUILD_ARGS=${{ github.event.inputs.build_args }}" >> $GITHUB_ENV
-        # new syntax: run: echo "BUILD_ARGS=${{ github.event.inputs.build_args }}" >> "$GITHUB_ENV"
-      - name: set-input-working-directory
-        if: ${{ github.event.inputs != null  &&  github.event.inputs.working_directory != null}}
-        run: echo "WORKING_DIRECTORY=${{ github.event.inputs.working_directory }}" >> $GITHUB_ENV
-        # new syntax: run: echo "WORKING_DIRECTORY=${{ github.event.inputs.working_directory }}" >> "$GITHUB_ENV"
-      # Set host ip to env variable to be uside within container actions
-      - name: set-host-ip
-        run: echo "_HOST_IP=$(hostname -I | cut -d ' ' -f 1)" >> $GITHUB_ENV
       - uses: actions/checkout@v7
-      - name: run-build-scripts
-        uses: ./.github/actions/build-environment
-        with:
-          build_args: ${{ env.BUILD_ARGS }}
-          working_directory: ${{ env.WORKING_DIRECTORY }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python 3.8 with uv
+        run: |
+          pip install uv
+          uv venv -p 3.8 .venv
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+          echo "VIRTUAL_ENV=$PWD/.venv" >> "$GITHUB_ENV"
+
+      - name: Install
+        # Same tool versions the build container used.
+        run: uv pip install -e ".[dev]" "black==24.8.0" "isort==5.13.2" "flake8==7.1.2" "mypy==0.812" build
+
+      - name: Build distribution
+        # `python -m build` would import the local build.py instead
+        run: pyproject-build
+
+      - name: Code checks
+        run: |
+          black --check src tests
+          isort --profile black --check-only src tests
+          pydocstyle src
+          mypy src
+          flake8 --show-source --statistics src tests
+
+      - name: Test
+        run: pytest -m "not slow"
