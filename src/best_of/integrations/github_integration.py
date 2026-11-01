@@ -133,9 +133,7 @@ query($owner: String!, $repo: String!, $since_recent_activity: GitTimestamp!) {
     licenseInfo {
       spdxId
     }
-    stargazers {
-      totalCount
-    }
+    stargazerCount
     pullRequests {
       totalCount
     }
@@ -319,7 +317,7 @@ def request_metadata_from_github_rest(
         info.pushedAt = repo.get("pushed_at")
         if repo.get("license"):
             info.licenseInfo.spdxId = repo["license"].get("spdx_id")
-        info.stargazers.totalCount = repo.get("stargazers_count")
+        info.stargazerCount = repo.get("stargazers_count")
         info.forks.totalCount = repo.get("forks_count")
         info.watchers.totalCount = repo.get("subscribers_count")
 
@@ -536,8 +534,10 @@ def update_via_github_api(project_info: Dict) -> None:
             # always use the highest number
             project_info.closed_issue_count = closed_issue_count
 
-    if github_info.stargazers and github_info.stargazers.totalCount:
-        star_count = int(github_info.stargazers.totalCount)
+    # `stargazers { totalCount }` is forbidden for GitHub Actions tokens
+    # ("Resource not accessible by integration"); the scalar works everywhere.
+    if github_info.stargazerCount:
+        star_count = int(github_info.stargazerCount)
         if not project_info.star_count:
             project_info.star_count = star_count
         elif int(project_info.star_count) < star_count:

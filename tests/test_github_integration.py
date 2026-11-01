@@ -113,3 +113,30 @@ def test_rest_fallback_fills_project_info(monkeypatch):
     assert project.recent_commit_count == 1
     assert project.latest_stable_release_number == "1.2.3"
     assert project.release_count == 1
+
+
+def test_graphql_star_count(monkeypatch):
+    monkeypatch.setenv("GITHUB_API_KEY", "t")
+    monkeypatch.setattr(
+        github_integration.requests,
+        "post",
+        lambda *a, **k: FakeResponse(
+            payload={
+                "data": {
+                    "repository": {
+                        "url": "https://github.com/a/b",
+                        "stargazerCount": 42,
+                    }
+                }
+            }
+        ),
+    )
+    monkeypatch.setattr(
+        github_integration.requests,
+        "get",
+        lambda *a, **k: FakeResponse(status_code=404),
+    )
+    project = github_integration.Dict(github_id="a/b", name="b")
+    github_integration.update_via_github_api(project)
+    assert project.star_count == 42
+    assert project.homepage == "https://github.com/a/b"
