@@ -91,31 +91,9 @@ act -b -j build
 
 #### Release a new version
 
-To release a new version and publish all relevant artifacts to the respective registries (e.g. Docker image to DockerHub) you can either trigger our release pipeline locally via Act or from the Github UI. For a release, you have to provide a valid version based on [Semantic Versioning](https://semver.org/) standard.
+There are no releases. This fork only serves [mkdocs-ng/catalog](https://github.com/mkdocs-ng/catalog), whose weekly update installs the latest `main` of this repository (`pip install git+https://github.com/mkdocs-ng/best-of-generator@main`). A change takes effect on the next catalog update after it is merged.
 
-##### Via Act (locally)
-
-To build all components and publish all artifacts from your local machine, execute:
-
-```bash
-act -b -s VERSION="<MAJOR.MINOR.PATCH>" -j release
-```
-
-In case you also want to automatically create a valid Github release, you also need to provide a valid `GITHUB_TOKEN` as a secret (`-s GITHUB_TOKEN=<token>`). Please refer to the next section for information on how to finish and publish the release.
-
-##### Via Github Actions
-
-To trigger our release pipeline from Github UI, you can either close a milestone that has a valid version name (`vMAJOR.MINOR.PATCH`) or execute the release pipeline manually via the `workflow_dispatch` UI in the Action Tab (`Actions -> release-pipeline -> Run Workflow`). The release pipeline will automatically create a pull request for the new version as well as a draft release on Github.
-
-After successful execution of the release pipeline, the following steps are required to finish the release:
-
-1. Merge the release PR into `main`. Preferably via merge commit to keep the version tag in the `main` branch. We suggest to use the following message for the merge commit: `Finalize release for version <VERSION> (#<PR>)`.
-2. Adapt the changelog of the draft release on Github (in the release section). Mention all other changes that are not covered by pull requests.
-3. Publish the release.
-
-##### Resolve an unsuccessful release
-
-In case the release pipeline fails at any step, we suggest to fix the problem based on the release pipeline logs and create a new release with an incremented `patch` version. To clean up the unsuccessful release, make sure to delete the following artifacts (if they exist): the release branch, the release PR, the version tag, the draft release, and any release artifact that was already published (e.g. on DockerHub, NPM or PyPi).
+To try a branch before merging, run the catalog's `update-best-of-list` workflow by hand with `dry_run` checked and `generator_ref` set to the branch, then check the README in the run's artifact.
 
 ### Commit messages guidelines
 
