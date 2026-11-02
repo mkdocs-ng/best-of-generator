@@ -523,7 +523,7 @@ The configuration example above changes the default configuration to show all pr
     <tr>
         <td><code>mkdocs_config_url</code></td>
         <td>Configuration reference that the "Add to mkdocs.yml" hints link to. The <code>#theme</code>, <code>#plugins</code> or <code>#markdown_extensions</code> anchor is appended.</td>
-        <td><code>https://mkdocs-ng.github.io/mkdocs/user-guide/configuration/</code></td>
+        <td><code>https://mkdocs-ng.org/user-guide/configuration/</code></td>
     </tr>
     <tr>
         <td><code>generate_toc</code></td>
