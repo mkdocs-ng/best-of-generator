@@ -2,9 +2,7 @@ from typing import List, Sequence, Tuple
 
 from addict import Dict
 
-DEFAULT_MKDOCS_CONFIG_URL = (
-    "https://mkdocs-ng.github.io/mkdocs/user-guide/configuration/"
-)
+DEFAULT_MKDOCS_CONFIG_URL = "https://mkdocs-ng.org/user-guide/configuration/"
 GALLERY_URL = "https://pawamoy.github.io/mkdocs-gallery"
 
 

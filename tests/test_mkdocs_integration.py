@@ -11,9 +11,7 @@ def generate(project: dict, config: Dict = CONFIG):
 
 def test_links_to_mkdocs_ng_docs_by_default():
     _, body = generate({"mkdocs_plugin": "search"})
-    assert (
-        "(https://mkdocs-ng.github.io/mkdocs/user-guide/configuration/#plugins)" in body
-    )
+    assert "(https://mkdocs-ng.org/user-guide/configuration/#plugins)" in body
 
 
 def test_config_url_is_configurable():
